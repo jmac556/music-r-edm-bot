@@ -1,4 +1,7 @@
-#This was written in 3 hours
+#This was in a few hours, so i apologise for conventional errors
+
+# TODO:
+    # Clear playlist every once in a while to avoid slowdowns/errors
 
 import private #Local file
 
@@ -20,14 +23,14 @@ def LogIntoSpotify():
 
 
 def addSongsToPlaylist(songs, spotifyObject):
-    #If there's no songs to add to the playlist, just break out of the function
+    # If there's no songs to add to the playlist, just break out of the function
     if(len(songs) == 0):
         return
     username = private.username
     playListID = private.playListID
     spotifyObject.user_playlist_add_tracks(username, playListID, songs, position=None)
 
-def fetchSongsFromReddit():
+def fetchSongsFromReddit(spotifyObject):
     songs=[]
     #Log-into reddit
     reddit = praw.Reddit(client_id=private.redditClient,
@@ -46,9 +49,19 @@ def fetchSongsFromReddit():
             #Deal with an album (to come)
             if("album" in submission.url):
                 #Deal with an album
-                print("Album............", submission.title)
+                albumURL = submission.url
+                albumURI = dealWithAlbums(spotifyObject, albumURL)
+                songs = songs + albumURI
     return songs
 
+def dealWithAlbums(spotifyObject, albumURL):
+    URIs = []
+    #Get dict of tracks in album
+    albumTracks = spotifyObject.album_tracks(albumURL)
+    #Parse the dict for song URL's
+    for i in range(albumTracks['total_tracks']):
+        URIs.append(albumTracks['tracks']['items'][i]['uri'])
+    return URIs
 
 def checkForDuplicates(songs):
     newSongs = []
@@ -82,6 +95,6 @@ def checkForDuplicates(songs):
 
 
 spotifyObject = LogIntoSpotify()
-songs = fetchSongsFromReddit()
+songs = fetchSongsFromReddit(spotifyObject)
 songs = checkForDuplicates(songs)
 addSongsToPlaylist(songs, spotifyObject)
