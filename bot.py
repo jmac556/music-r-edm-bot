@@ -1,7 +1,4 @@
-#This was in a few hours, so i apologise for conventional errors
-
-# TODO:
-    # Clear playlist every once in a while to avoid slowdowns/errors
+#This was made in a few hours, so i apologise for conventional errors
 
 import private #Local file
 
@@ -41,14 +38,14 @@ def fetchSongsFromReddit(spotifyObject):
                          password=private.redditPassword)
     subreddit = reddit.subreddit('edm')
     #Get the newest 5 posts
-    posts = subreddit.new(limit=25)
+    posts = subreddit.new(limit=5)
     for submission in posts:
         if(submission.link_flair_text == "New" and "spotify" in submission.url):
             #Deal with a single track
             if("track" in submission.url):
                 songs.append(submission.url)
             #Deal with an album (to come)
-            if("album" in submission.url):
+            elif("album" in submission.url):
                 #Deal with an album
                 albumURL = submission.url
                 albumURI = dealWithAlbums(spotifyObject, albumURL)
@@ -67,7 +64,7 @@ def dealWithAlbums(spotifyObject, albumURL):
 def checkForDuplicates(songs):
     newSongs = []
     #Pull all songs in the playlist
-    uriInPlayList = getURIInPlayList()
+    uriInPlayList = getURIInPlayList(spotifyObject)
     #If there are duplicates, don't add the to the "new songs" list
     for i in range(len(songs)):
         if (spotifyObject.track(songs[i])["uri"] not in uriInPlayList):
@@ -75,7 +72,7 @@ def checkForDuplicates(songs):
     return newSongs
 
 
-def getURIInPlayList():
+def getURIInPlayList(spotifyObject):
     #Pull all info about the playlist
     songsInPlayList = spotifyObject.user_playlist_tracks(private.username, playlist_id=private.playListID, limit=100)
     uriInPlayList = []
@@ -94,10 +91,12 @@ def getURIInPlayList():
     return uriInPlayList
 
 
-def deleteAllSongs(spoyifyObject):
-    # Pull all songs in the playlist
-    songsInPlayList = getURIInPlayList()
-    spotifyObject.user_playlist_remove_all_occurrences_of_tracks(private.username, private.playListID, songsInPlayList)
+# Implemented in delete_playlist.py
+
+# def deleteAllSongs(spoyifyObject):
+#     # Pull all songs in the playlist
+#     songsInPlayList = getURIInPlayList(spotifyObject)
+#     spotifyObject.user_playlist_remove_all_occurrences_of_tracks(private.username, private.playListID, songsInPlayList)
 
 
 #Continuously run
@@ -106,5 +105,4 @@ while True:
     songs = fetchSongsFromReddit(spotifyObject)
     songs = checkForDuplicates(songs)
     addSongsToPlaylist(songs, spotifyObject)
-    #deleteAllSongs(spotifyObject) <------------Add at a later date
     time.sleep(60)
